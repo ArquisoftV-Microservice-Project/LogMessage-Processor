@@ -44,10 +44,20 @@ jobs:
           gcloud auth activate-service-account --key-file=terraform-key.json
           gcloud auth configure-docker ${{ vars.GCP_ZONE }}-docker.pkg.dev
 
+      - name: Set image tags
+        run: |
+          TIMESTAMP=$(date -u +'%Y%m%d-%H%M%S')
+          # Reemplaza '/' por '-' en el nombre de la rama para evitar errores en el tag
+          BRANCH_NAME=$(echo "${GITHUB_REF##*/}" | tr '/' '-')
+          echo "IMAGE_TAG=${BRANCH_NAME}-${TIMESTAMP}" >> $GITHUB_ENV
+
       - name: Build Docker images
         run: |
-          docker build -t ${{ vars.GCP_ZONE }}-docker.pkg.dev/$GCP_PROJECT/${{ vars.REGISTRY }}/log-message-processor:latest .
+          IMAGE_PATH=${{ vars.GCP_ZONE }}-docker.pkg.dev/$GCP_PROJECT/${{ vars.REGISTRY }}/log-message-processor
+          docker build -t $IMAGE_PATH:latest -t $IMAGE_PATH:$IMAGE_TAG .
 
       - name: Push Docker images
         run: |
-          docker push ${{ vars.GCP_ZONE }}-docker.pkg.dev/$GCP_PROJECT/${{ vars.REGISTRY }}/log-message-processor:latest
+          IMAGE_PATH=${{ vars.GCP_ZONE }}-docker.pkg.dev/$GCP_PROJECT/${{ vars.REGISTRY }}/log-message-processor
+          docker push $IMAGE_PATH:latest
+          docker push $IMAGE_PATH:$IMAGE_TAG
