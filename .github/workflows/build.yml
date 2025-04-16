@@ -20,7 +20,7 @@ jobs:
         run: |
           echo "${{ secrets.GCP_SA_KEY_B64 }}" | base64 -d > terraform-key.json
           # Verifica que el archivo se creó correctamente
-          head -n 3 terraform-key.json
+          cat terraform-key.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/terraform-key.json" >> $GITHUB_ENV
 
       - id: "auth"
