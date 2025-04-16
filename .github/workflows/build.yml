@@ -16,6 +16,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set environment variables
+        run: |
+          echo "GCP_PROJECT=${{ secrets.GCP_PROJECT }}" >> $GITHUB_ENV
+
       - name: Set up GCP credentials
         run: |
           echo "${{ secrets.GCP_SA_KEY_B64 }}" | base64 -d > terraform-key.json
@@ -42,8 +46,8 @@ jobs:
 
       - name: Build Docker images
         run: |
-          docker build -t ${{ vars.GCP_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ vars.REGISTRY }}/log-message-processor:latest .
+          docker build -t ${{ vars.GCP_ZONE }}-docker.pkg.dev/$GCP_PROJECT/${{ vars.REGISTRY }}/log-message-processor:latest .
 
       - name: Push Docker images
         run: |
-          docker push ${{ vars.GCP_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ env.REGISTRY }}/log-message-processor:latest
+          docker push ${{ vars.GCP_ZONE }}-docker.pkg.dev/$GCP_PROJECT/${{ vars.REGISTRY }}/log-message-processor:latest
