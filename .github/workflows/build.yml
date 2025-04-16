@@ -38,12 +38,12 @@ jobs:
         run: |
           gcloud info
           gcloud auth activate-service-account --key-file=terraform-key.json
-          gcloud auth configure-docker ${{ env.GCP_ZONE }}-docker.pkg.dev
+          gcloud auth configure-docker ${{ vars.GCP_ZONE }}-docker.pkg.dev
 
       - name: Build Docker images
         run: |
-          docker build -t ${{ env.GCP_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ env.REGISTRY }}/log-message-processor:latest .
+          docker build -t ${{ vars.GCP_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ vars.REGISTRY }}/log-message-processor:latest .
 
       - name: Push Docker images
         run: |
-          docker push ${{ env.GCP_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ env.REGISTRY }}/log-message-processor:latest
+          docker push ${{ vars.GCP_ZONE }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/${{ env.REGISTRY }}/log-message-processor:latest
