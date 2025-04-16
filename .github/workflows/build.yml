@@ -20,13 +20,13 @@ jobs:
         run: |
           echo "${{ secrets.GCP_SA_KEY_B64 }}" | base64 -d > terraform-key.json
           # Verifica que el archivo se creó correctamente
-          cat terraform-key.json
+          echo "GCP_CREDENTIALS=$(cat terraform-key.json)" >> $GITHUB_ENV
           echo "GOOGLE_APPLICATION_CREDENTIALS=$(pwd)/terraform-key.json" >> $GITHUB_ENV
 
       - id: "auth"
         uses: "google-github-actions/auth@v2"
         with:
-          credentials_json: terraform-key.json
+          credentials_json: ${{ env.GCP_CREDENTIALS }}
 
       - name: "Set up Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v2"
