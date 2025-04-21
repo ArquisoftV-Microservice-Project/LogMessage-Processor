@@ -4,101 +4,13 @@ on:
     branches:
       - main
   workflow_dispatch:
-    
+
 permissions:
-  pull-requests: write
   contents: read
+  pull-requests: write
 
-
+    
 jobs:
-  sonar:
-    name: Run SonarQube
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-
-      - name: Setup SonarQube Scanner
-        uses: SonarSource/sonarqube-scan-action@v5.1.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST }}
-        with:
-          args: >
-            -Dsonar.projectKey=${{ github.event.repository.name }}
-            -Dsonar.sources=.
-
-      - name: Install jq (for parsing JSON)
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Wait for SonarQube Analysis to complete
-        id: wait-sonar
-        run: |
-          PROJECT_KEY="${{ github.event.repository.name }}"
-          SONAR_URL="${{ secrets.SONAR_HOST }}"
-          SONAR_TOKEN="${{ secrets.SONAR_TOKEN }}"
-
-          MAX_ATTEMPTS=12
-          ATTEMPT=0
-
-          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-            echo "Waiting for SonarQube analysis... Attempt $((ATTEMPT+1))"
-            
-            RESPONSE=$(curl -s -u $SONAR_TOKEN: "$SONAR_URL/api/measures/component?component=$PROJECT_KEY&metricKeys=code_smells,bugs,vulnerabilities,coverage,duplicated_lines_density")
-            echo "$RESPONSE" > sonar-report.json
-            
-            ANALYSIS_READY=$(jq -r '.component.measures | length' sonar-report.json)
-            
-            if [ "$ANALYSIS_READY" != "0" ]; then
-              echo "Analysis is ready!"
-              break
-            fi
-            
-            ATTEMPT=$((ATTEMPT+1))
-            sleep 10
-          done
-
-          if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
-            echo "Timeout waiting for SonarQube analysis."
-            exit 1
-          fi
-
-      - name: Get SonarQube analysis report
-        id: sonar-report
-        run: |
-          # Assumes sonar-report.json is already created
-          BUGS=$(jq -r '.component.measures[] | select(.metric=="bugs") | .value' sonar-report.json)
-          CODE_SMELLS=$(jq -r '.component.measures[] | select(.metric=="code_smells") | .value' sonar-report.json)
-          VULNERABILITIES=$(jq -r '.component.measures[] | select(.metric=="vulnerabilities") | .value' sonar-report.json)
-          COVERAGE=$(jq -r '.component.measures[] | select(.metric=="coverage") | .value' sonar-report.json)
-          DUPLICATION=$(jq -r '.component.measures[] | select(.metric=="duplicated_lines_density") | .value' sonar-report.json)
-
-          REPORT="🚨 **SonarQube Report**
-          - 🐞 Bugs: $BUGS
-          - 💨 Code Smells: $CODE_SMELLS
-          - 🔐 Vulnerabilities: $VULNERABILITIES
-          - 🧪 Coverage: $COVERAGE%
-          - 📦 Duplication: $DUPLICATION%"
-
-          echo "$REPORT"
-          echo "report<<EOF" >> $GITHUB_OUTPUT
-          echo "$REPORT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Comment on PR
-        if: github.event_name == 'pull_request'
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: sonar-report
-          message: ${{ steps.sonar-report.outputs.report }}
-          
+  sonar-analysis:
+    uses: ArquisoftV-Microservice-Project/devops-workflows/.github/workflows/sonar.yml@main
+    secrets: inherit
